@@ -1,0 +1,12 @@
+# GPU Override
+# Usage:
+#   docker compose -f compose.yaml -f compose.gpu.yaml up -d
+services:
+  inference-server:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

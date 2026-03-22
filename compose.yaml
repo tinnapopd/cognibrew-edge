@@ -1,0 +1,160 @@
+# Base stack (no GPU). For GPU support, also load the GPU override:
+#   docker compose -f compose.yaml -f compose.gpu.yaml up -d
+
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:1.17.0
+    container_name: cognibrew-mediamtx
+    restart: unless-stopped
+    ports:
+      - "8554:8554" # RTSP
+      - "9997:9997" # API
+    volumes:
+      - ./services/mediamtx/mediamtx.yml:/mediamtx.yml:ro
+    networks:
+      - cognibrew
+
+  rabbitmq:
+    image: rabbitmq:4.2.5-management-alpine
+    container_name: cognibrew-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672" # AMQP
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit heartbeat 120"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cognibrew
+
+  qdrant:
+    image: qdrant/qdrant:v1.17
+    container_name: cognibrew-qdrant
+    restart: unless-stopped
+    ports:
+      - "6334:6334" # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c ':> /dev/tcp/localhost/6334'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cognibrew
+
+  inference-server:
+    image: teetinnapop/actions:cognibrew-inference-server-latest
+    platform: linux/amd64
+    container_name: cognibrew-inference-server
+    restart: unless-stopped
+    command: ["python3", "stream.py"]
+    environment:
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # Stream / RTSP
+      STREAM_RTSP_URL: rtsp://admin:cognibrew@mediamtx:8554/tenda_cp7_main
+      STREAM_SKIP_FRAME: ${STREAM_SKIP_FRAME:-5}
+      STREAM_APPLY_DIFF: ${STREAM_APPLY_DIFF:-true}
+      STREAM_DIFF_THRESHOLD: ${STREAM_DIFF_THRESHOLD:-5.0}
+      # RabbitMQ
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_EXCHANGE_NAME: ${RABBITMQ_EXCHANGE_NAME:-cognibrew.inference}
+      RABBITMQ_QUEUE_NAME: ${RABBITMQ_QUEUE_NAME:-cognibrew.inference.face_embedded}
+      RABBITMQ_FACE_EMBEDDED_ROUTING_KEY: ${RABBITMQ_FACE_EMBEDDED_ROUTING_KEY:-face.embedded}
+      # Model
+      MODEL_FRAMEWORK: ${MODEL_FRAMEWORK:-insightface}
+      MODEL_NAME: ${MODEL_NAME:-buffalo_sc}
+    depends_on:
+      mediamtx:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - cognibrew
+
+  recognition-service:
+    image: teetinnapop/actions:cognibrew-recognition-service-latest
+    platform: linux/amd64
+    container_name: cognibrew-recognition-service
+    restart: unless-stopped
+    labels:
+      cognibrew.service: recognition
+    environment:
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # RabbitMQ
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_INFERENCE_EXCHANGE_NAME: ${RABBITMQ_INFERENCE_EXCHANGE_NAME:-cognibrew.inference}
+      RABBITMQ_INFERENCE_QUEUE_NAME: ${RABBITMQ_INFERENCE_QUEUE_NAME:-cognibrew.inference.face_embedded}
+      RABBITMQ_FACE_EMBEDDED_ROUTING_KEY: ${RABBITMQ_FACE_EMBEDDED_ROUTING_KEY:-face.embedded}
+      RABBITMQ_FACE_RECOGNIZED_ROUTING_KEY: ${RABBITMQ_FACE_RECOGNIZED_ROUTING_KEY:-face.recognized}
+      RABBITMQ_FACE_UPDATE_EXCHANGE_NAME: ${RABBITMQ_FACE_UPDATE_EXCHANGE_NAME:-cognibrew.vectordb}
+      RABBITMQ_FACE_UPDATE_QUEUE_NAME: ${RABBITMQ_FACE_UPDATE_QUEUE_NAME:-cognibrew.vectordb.face_updated}
+      RABBITMQ_FACE_UPDATE_ROUTING_KEY: ${RABBITMQ_FACE_UPDATE_ROUTING_KEY:-face.updated}
+      # Qdrant (gRPC)
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6334
+      QDRANT_COLLECTION_NAME: ${QDRANT_COLLECTION_NAME:-face_embeddings}
+      QDRANT_EMBEDDING_DIM: ${QDRANT_EMBEDDING_DIM:-512}
+      # Model
+      MODEL_SIMILARITY_THRESHOLD: ${MODEL_SIMILARITY_THRESHOLD:-0.65}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    networks:
+      - cognibrew
+
+  version-manager:
+    image: teetinnapop/actions:cognibrew-version-manager-latest
+    platform: linux/amd64
+    container_name: cognibrew-version-manager
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # RabbitMQ
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_FACE_UPDATE_EXCHANGE_NAME: ${RABBITMQ_FACE_UPDATE_EXCHANGE_NAME:-cognibrew.vectordb}
+      RABBITMQ_FACE_UPDATE_QUEUE_NAME: ${RABBITMQ_FACE_UPDATE_QUEUE_NAME:-cognibrew.vectordb.face_updated}
+      RABBITMQ_FACE_UPDATE_ROUTING_KEY: ${RABBITMQ_FACE_UPDATE_ROUTING_KEY:-face.updated}
+      # Docker
+      DOCKER_TARGET_LABEL: ${DOCKER_TARGET_LABEL:-cognibrew.service=recognition}
+      DOCKER_HEALTH_TIMEOUT_S: ${DOCKER_HEALTH_TIMEOUT_S:-30}
+      DOCKER_HEALTH_POLL_S: ${DOCKER_HEALTH_POLL_S:-1}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - cognibrew
+
+volumes:
+  rabbitmq_data:
+  qdrant_data:
+
+networks:
+  cognibrew:
+    driver: bridge
