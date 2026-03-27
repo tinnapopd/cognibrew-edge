@@ -29,7 +29,7 @@ htmlcov/
 # macOS
 .DS_Store
 
-# InsightFace models (large binary files)
+# InsightFace models
 models/
 
 # MediaMTX Config
