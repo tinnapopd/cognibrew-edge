@@ -31,3 +31,6 @@ htmlcov/
 
 # InsightFace models (large binary files)
 models/
+
+# MediaMTX Config
+services/mediamtx/*.yml
