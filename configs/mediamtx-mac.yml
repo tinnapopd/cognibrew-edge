@@ -1,0 +1,40 @@
+# MediaMTX Configuration - Cognibrew Edge (Mac)
+# Only non-default values are specified here.
+# Reference: https://github.com/bluenviron/mediamtx/blob/main/mediamtx.yml
+
+# Disable unused protocols
+rtmp: false
+hls: false
+webrtc: false
+srt: false
+
+# Enable Control API
+api: true
+
+# Authentication
+authInternalUsers:
+  - user: admin
+    pass: cognibrew
+    ips: []
+    permissions:
+      - action: publish
+        path:
+      - action: read
+        path:
+      - action: playback
+        path:
+      - action: api
+      - action: metrics
+      - action: pprof
+
+# Camera paths
+paths:
+  tenda_cp7_main:
+    source: rtsp://admin:admin1234@192.168.2.2:554/ch=1?subtype=0
+    sourceOnDemand: true
+
+  tenda_cp7_sub:
+    source: rtsp://admin:admin1234@192.168.2.2:554/ch=1?subtype=1
+    sourceOnDemand: true
+
+  all_others:
