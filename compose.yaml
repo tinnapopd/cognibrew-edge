@@ -4,19 +4,19 @@
 services:
   mediamtx:
     image: bluenviron/mediamtx:1.17.0
-    container_name: cognibrew-mediamtx
+    container_name: mediamtx
     restart: unless-stopped
     ports:
       - "8554:8554" # RTSP
       - "9997:9997" # API
     volumes:
-      - ./configs/${MEDIAMTX_CONFIG:-mediamtx-mac}.yml:/mediamtx.yml:ro
+      - ./configs/${MEDIAMTX_CONFIG:-mediamtx-tenda-mac}.yml:/mediamtx.yml:ro
     networks:
       - cognibrew
 
   rabbitmq:
     image: rabbitmq:4.2.5-management-alpine
-    container_name: cognibrew-rabbitmq
+    container_name: rabbitmq
     restart: unless-stopped
     ports:
       - "5672:5672" # AMQP
@@ -37,7 +37,7 @@ services:
 
   qdrant:
     image: qdrant/qdrant:v1.17
-    container_name: cognibrew-qdrant
+    container_name: qdrant
     restart: unless-stopped
     ports:
       - "6333:6333" # HTTP
@@ -55,7 +55,7 @@ services:
   inference-server:
     image: teetinnapop/actions:cognibrew-inference-server-latest
     platform: linux/amd64
-    container_name: cognibrew-inference-server
+    container_name: inference-server
     restart: unless-stopped
     command: ["python3", "stream.py"]
     environment:
@@ -84,7 +84,7 @@ services:
   recognition-service:
     image: teetinnapop/actions:cognibrew-recognition-service-latest
     platform: linux/amd64
-    container_name: cognibrew-recognition-service
+    container_name: recognition-service
     restart: unless-stopped
     labels:
       cognibrew.service: recognition
@@ -117,7 +117,7 @@ services:
   version-manager:
     image: teetinnapop/actions:cognibrew-version-manager-latest
     platform: linux/amd64
-    container_name: cognibrew-version-manager
+    container_name: version-manager
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -152,3 +152,4 @@ volumes:
 networks:
   cognibrew:
     driver: bridge
+    name: cognibrew
