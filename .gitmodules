@@ -1,0 +1,12 @@
+[submodule "services/usermanagement"]
+	path = services/usermanagement
+	url = https://github.com/kToonGitHub/SEMLS-cognibrew-usermanagement.git
+[submodule "services/member"]
+	path = services/member
+	url = https://github.com/kToonGitHub/SEMLS-cognibrew-member.git
+[submodule "services/feedback"]
+	path = services/feedback
+	url = https://github.com/kToonGitHub/SEMLS-cognibrew-feedback.git
+[submodule "services/notification"]
+	path = services/notification
+	url = https://github.com/kToonGitHub/SEMLS-cognibrew-notification.git
