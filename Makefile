@@ -65,6 +65,20 @@ webcam-gpu: ## Run with local webcam + GPU + auto-stream
 logs: ## Tail logs for all services
 	$(COMPOSE) $(COMPOSE_BASE) logs -f
 
+.PHONY: start-subs
+start-subs: ## Start all submodule microservices
+	$(COMPOSE) -f services/usermanagement/docker-compose.yaml up -d
+	$(COMPOSE) -f services/member/docker-compose.yaml up -d
+	$(COMPOSE) -f services/feedback/docker-compose.yaml up -d
+	$(COMPOSE) -f services/notification/docker-compose.yaml up -d
+
+.PHONY: stop-subs
+stop-subs: ## Stop all submodule microservices
+	$(COMPOSE) -f services/usermanagement/docker-compose.yaml down
+	$(COMPOSE) -f services/member/docker-compose.yaml down
+	$(COMPOSE) -f services/feedback/docker-compose.yaml down
+	$(COMPOSE) -f services/notification/docker-compose.yaml down
+
 .PHONY: pull
 pull: ## Pull latest images
 	$(COMPOSE) $(COMPOSE_BASE) pull
