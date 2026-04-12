@@ -30,8 +30,9 @@ tenda-router: ## Run with Tenda camera (via wifi-router)
 	MEDIAMTX_CONFIG=mediamtx-tenda-router $(COMPOSE) $(COMPOSE_BASE) up -d
 
 .PHONY: webcam
-webcam: ## Run with local webcam
+webcam: ## Run with local webcam + auto-stream
 	MEDIAMTX_CONFIG=mediamtx-webcam $(COMPOSE) $(COMPOSE_BASE) up -d
+	./scripts/start_webcam.sh
 
 # -----------------------------------------------------------------------------
 # Run profiles (GPU)
@@ -49,8 +50,9 @@ tenda-router-gpu: ## Run with Tenda camera (via router) + GPU
 	MEDIAMTX_CONFIG=mediamtx-tenda-router $(COMPOSE) $(COMPOSE_BASE) $(COMPOSE_GPU) up -d
 
 .PHONY: webcam-gpu
-webcam-gpu: ## Run with local webcam + GPU
+webcam-gpu: ## Run with local webcam + GPU + auto-stream
 	MEDIAMTX_CONFIG=mediamtx-webcam $(COMPOSE) $(COMPOSE_BASE) $(COMPOSE_GPU) up -d
+	./scripts/start_webcam.sh
 
 # -----------------------------------------------------------------------------
 # Utilities
