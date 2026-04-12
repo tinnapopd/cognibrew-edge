@@ -14,6 +14,10 @@ reset: ## Hard-reset to origin/main
 	git fetch origin
 	git reset --hard origin/main
 
+.PHONY: submodules
+submodules: ## Update and pull the latest changes for all submodules
+	git submodule update --init --recursive --remote
+
 # -----------------------------------------------------------------------------
 # Run profiles (CPU)
 # -----------------------------------------------------------------------------
