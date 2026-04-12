@@ -138,6 +138,7 @@ services:
       SYNC_PAGE_SIZE: ${VMNG_SYNC_PAGE_SIZE:-50}
       SYNC_SCHEDULE_TIME: ${VMNG_SYNC_SCHEDULE_TIME:-01:00}
       SYNC_CHECK_EVERY: ${VMNG_SYNC_CHECK_EVERY:-60}
+      SYNC_DEVICE_ID: ${VMNG_SYNC_DEVICE_ID:-test-device}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
