@@ -10,3 +10,9 @@
 [submodule "services/notification"]
 	path = services/notification
 	url = https://github.com/kToonGitHub/SEMLS-cognibrew-notification.git
+[submodule "services/cognibrew-microservices"]
+	path = services/cognibrew-microservices
+	url = https://github.com/OHMLB/cognibrew-microservices.git
+[submodule "cognibrew-ui"]
+	path = services/cognibrew-ui
+	url = git@github.com:golfgap16278/cognibrew-ui.git
