@@ -1,0 +1,203 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Member Data</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="file"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        input[type="file"] {
+            padding: 6px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+            button:hover {
+                background-color: #0056b3;
+            }
+
+        #responseBox {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #282c34;
+            color: #abb2bf;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            display: none;
+        }
+
+        .success {
+            border-left: 4px solid #98c379;
+        }
+
+        .error {
+            border-left: 4px solid #e06c75;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Upload Member with Image</h2>
+
+        <form id="uploadForm">
+            <div class="form-group">
+                <label for="accessToken">Access Token (Authorization)</label>
+                <input type="password" id="accessToken" placeholder="วาง Access Token ที่นี่..." required>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+            <div class="form-group">
+                <label for="Username">Username</label>
+                <input type="text" id="Username" name="Username" value="Kanokpol_Hello_Toon" required>
+            </div>
+            <div class="form-group">
+                <label for="FirstName">First Name</label>
+                <input type="text" id="FirstName" name="FirstName" value="Toon" required>
+            </div>
+            <div class="form-group">
+                <label for="LastName">Last Name</label>
+                <input type="text" id="LastName" name="LastName" value="Dao" required>
+            </div>
+            <div class="form-group">
+                <label for="Rank">Rank</label>
+                <input type="text" id="Rank" name="Rank" value="Gold" required>
+            </div>
+            <div class="form-group">
+                <label for="Points">Points</label>
+                <input type="number" id="Points" name="Points" value="9600" required>
+            </div>
+            <div class="form-group">
+                <label for="Image">Image (File)</label>
+                <input type="file" id="Image" name="Image" accept="image/*" required>
+            </div>
+
+            <button type="submit">Send POST Request</button>
+        </form>
+
+        <div id="responseBox"></div>
+    </div>
+
+    <script>
+    document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+        event.preventDefault(); // ป้องกันการรีเฟรชหน้าเว็บ
+
+        const responseBox = document.getElementById('responseBox');
+        responseBox.style.display = 'block';
+        responseBox.className = '';
+        responseBox.textContent = 'Sending request...';
+
+        const token = document.getElementById('accessToken').value;
+
+        // 1. จัดเตรียม FormData
+        const formData = new FormData();
+        formData.append('Username', document.getElementById('Username').value);
+        formData.append('FirstName', document.getElementById('FirstName').value);
+        formData.append('LastName', document.getElementById('LastName').value);
+        formData.append('Rank', document.getElementById('Rank').value);
+        formData.append('Points', document.getElementById('Points').value);
+        formData.append('Image', document.getElementById('Image').files[0]);
+
+        // 2. จัดเตรียม Headers สำหรับ Access Token
+        const headers = new Headers();
+        // ตรวจสอบว่าผู้ใช้ใส่คำว่า Bearer มาด้วยหรือไม่ ถ้าไม่มีให้เติมให้ (มาตรฐาน API ส่วนใหญ่)
+        const authValue = token.trim().startsWith('Bearer') ? token.trim() : `Bearer ${token.trim()}`;
+        headers.append('Authorization', authValue);
+
+        // 3. ตั้งค่า Request Options
+        const requestOptions = {
+            method: 'POST',
+            headers: headers,
+            body: formData,
+            redirect: 'follow'
+        };
+
+        try {
+            // 4. ส่ง Request ไปยัง API ของคุณ
+            const response = await fetch('http://localhost:5012/api/Member/upload-with-image', requestOptions);
+            const resultText = await response.text();
+
+            // พยายามแสดงผลเป็น JSON ให้สวยงาม ถ้า API ตอบกลับเป็น JSON
+            let displayText = '';
+            try {
+                const jsonObj = JSON.parse(resultText);
+                displayText = JSON.stringify(jsonObj, null, 2);
+            } catch (e) {
+                displayText = resultText;
+            }
+
+            responseBox.textContent = `Status: ${response.status} ${response.statusText}\n\n${displayText}`;
+
+            if (response.ok) {
+                responseBox.classList.add('success');
+            } else {
+                responseBox.classList.add('error');
+            }
+
+        } catch (error) {
+            // จัดการ Error (เช่น Server ไม่เปิด หรือติด CORS)
+            responseBox.textContent = `Network Error / Exception:\n${error.message}`;
+            responseBox.classList.add('error');
+            console.error('Fetch Error:', error);
+        }
+    });
+    </script>
+
+</body>
+</html>
