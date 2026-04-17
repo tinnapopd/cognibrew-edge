@@ -179,12 +179,3 @@ services:
     networks:
       - cognibrew
     restart: always
-
-volumes:
-  rabbitmq_data:
-  qdrant_data:
-
-networks:
-  cognibrew:
-    driver: bridge
-    name: cognibrew
