@@ -6,6 +6,8 @@ COMPOSE_INFRA  := -f compose.infra.yaml
 COMPOSE_BASE   := -f compose.yaml
 COMPOSE_MOCK   := -f compose.mock.yaml
 COMPOSE_GPU    := -f compose.gpu.yaml
+BASE_SERVICES := mediamtx inference-server recognition-service version-manager \
+				catalog recommendation ui
 
 # -----------------------------------------------------------------------------
 # Git
@@ -133,13 +135,22 @@ pull: ## Pull latest images
 		pull
 
 .PHONY: down
-down: ## Stop and remove all containers
-	$(COMPOSE) $(COMPOSE_BASE) down
+down: ## Stop app services only (infrastructure stays up)
+	$(COMPOSE) \
+		$(COMPOSE_INFRA) \
+		$(COMPOSE_BASE) \
+		rm -sf $(BASE_SERVICES)
 
 .PHONY: restart
-restart: ## Restart only app services (infrastructure stays up)
-	$(COMPOSE) $(COMPOSE_BASE) down
-	$(COMPOSE) $(COMPOSE_BASE) up -d
+restart: ## Restart app services only (infrastructure stays up)
+	$(COMPOSE) \
+		$(COMPOSE_INFRA) \
+		$(COMPOSE_BASE) \
+		rm -sf $(BASE_SERVICES)
+	$(COMPOSE) \
+		$(COMPOSE_INFRA) \
+		$(COMPOSE_BASE) \
+		up -d
 
 .PHONY: down-all
 down-all: ## Stop and remove all containers including infrastructure

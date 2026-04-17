@@ -179,3 +179,8 @@ services:
     networks:
       - cognibrew
     restart: always
+
+networks:
+  cognibrew:
+    driver: bridge
+    name: cognibrew
