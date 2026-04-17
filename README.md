@@ -63,27 +63,60 @@ MEDIAMTX_CONFIG=mediamtx-tenda-mac
 > Each config file only overrides non-default values.
 > Full reference: <https://github.com/bluenviron/mediamtx/blob/main/mediamtx.yml>
 
-### 3. Run Docker Compose
+### 3. Run
 
-**With Mock RTSP stream from sample video:**
+All commands use `make`. The stack is split into compose layers:
+
+| File | Variable | Contents |
+|------|----------|----------|
+| `compose.infra.yaml` | `COMPOSE_INFRA` | RabbitMQ, Qdrant, Gateway |
+| `compose.yaml` | `COMPOSE_BASE` | MediaMTX, Inference, Recognition, Catalog, Recommendation, UI, Version Manager |
+| `compose.mock.yaml` | `COMPOSE_MOCK` | MediaMTX override (pre-recorded video) |
+| `compose.gpu.yaml` | `COMPOSE_GPU` | GPU resource reservation |
+
+#### CPU Profiles
 
 ```bash
-docker compose -f compose.yaml -f compose.mock.yml up -d
+make mock           # Mock RTSP stream (pre-recorded video)
+make tenda-mac      # Tenda camera via USB-Ethernet (macOS)
+make tenda-router   # Tenda camera via Wi-Fi router
+make webcam         # Local webcam + auto-stream
 ```
 
-**With NVIDIA GPU (production server):**
+#### GPU Profiles
 
 ```bash
-docker compose -f compose.yaml -f compose.gpu.yaml up -d
-```
-
-**Without GPU (Mac / CI):**
-
-```bash
-docker compose up -d
+make mock-gpu           # Mock RTSP stream + GPU
+make tenda-mac-gpu      # Tenda camera (macOS) + GPU
+make tenda-router-gpu   # Tenda camera (router) + GPU
+make webcam-gpu         # Local webcam + GPU
 ```
 
 > **Note:** GPU mode requires the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html).
+
+#### Submodule Microservices
+
+```bash
+make up-subs        # Start all submodule microservices
+make down-subs      # Stop all submodule microservices
+```
+
+#### Utilities
+
+```bash
+make logs           # Tail logs for all services
+make pull           # Pull latest images
+make restart        # Restart app services only (infrastructure stays up)
+make down           # Stop app services only
+make down-all       # Stop all containers including infrastructure
+```
+
+#### Git
+
+```bash
+make reset          # Hard-reset to origin/main
+make submodules     # Update and pull latest submodules
+```
 
 ### 4. Verify
 
@@ -93,10 +126,7 @@ docker compose up -d
 | Qdrant Dashboard | <http://localhost:6333/dashboard> |
 | MediaMTX API | <http://localhost:9997/v3/paths/list> |
 | Version Manager API | <http://localhost:8000/docs> |
-
-### 5. Stop
-
-```bash
-docker compose down          # keep volumes
-docker compose down -v       # remove volumes
-```
+| Gateway API | <http://localhost:8001/docs> |
+| Catalog API | <http://localhost:8003/docs> |
+| Recommendation API | <http://localhost:8002/docs> |
+| CogniBrew UI | <http://localhost:3000> |
